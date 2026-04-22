@@ -147,10 +147,12 @@ def removeCoplanarFaces(faces):
         normal = np.cross(p1 - p0, p2 - p0)
         normal = np.abs(normal)
 
+        # find which axis to "drop" so we can convert to a 2d polygon
         drop_axis = np.argmax(normal)
 
         projected = np.delete(pts, drop_axis, axis=1)
 
+        # find 2d convex hull and then triangulate that
         hull2d = ConvexHull(projected)
 
         boundary = [vertices[i] for i in hull2d.vertices]
