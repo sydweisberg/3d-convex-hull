@@ -1,7 +1,15 @@
 # 3d-convex-hull
 Final project for Smith College CS 372 Applied Algorithms
 
-`pip install distance3d`
+# Installation and Run Instructions
+1. Package Installation
+- `pip install distance3d`
+- `pip install scipy`
+- `pip install flask`
+2. Open two terminals
+3. In one terminal run `python app.py`
+4. In the second terminal run `python -m http.server 8000`
+5. Open the server on http://localhost:8000/
 
 # 3D Convex Hull Visualization
 This implementation of 3D convex hull visualization is Sydney and Molly's final project for CSC 372: Applied Algorithms in Spring 2026.
