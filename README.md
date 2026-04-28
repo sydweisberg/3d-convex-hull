@@ -1,7 +1,7 @@
 # 3D Convex Hull
 This GitHub Repository contains Molly Daniel and Sydney Weisberg's final project for CSC 372: Applied Algorithms.
 
-# Installation and Run Instructions
+## Installation and Run Instructions
 1. Package Installation
 - `pip install distance3d`
 - `pip install scipy`
