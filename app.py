@@ -6,29 +6,25 @@ import numpy as np
 app = Flask(__name__)
 CORS(app)
 
-def to_np(points):
-    return np.array(points)
+def compute_hull(points):
+    pts = np.array(points)
+
+    if len(pts) < 4:
+        return None
+
+    hull = ConvexHull(pts)
+
+    return {
+        "vertices": pts.tolist(),
+        "simplices": hull.simplices.tolist()
+    }
 
 @app.route("/hull", methods=["POST"])
 def hull():
     data = request.json
+    points = data["points"]
 
-    def compute(obj):
-        pts = to_np(obj)
-        if len(pts) < 4:
-            return None
-
-        hull = ConvexHull(pts)
-
-        return {
-            "vertices": pts.tolist(),
-            "simplices": hull.simplices.tolist()
-        }
-
-    return jsonify({
-        "hull1": compute(data["object1"]),
-        "hull2": compute(data["object2"])
-    })
+    return jsonify(compute_hull(points))
 
 if __name__ == "__main__":
     app.run(debug=True)
