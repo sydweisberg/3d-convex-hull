@@ -12,9 +12,6 @@ This GitHub Repository contains Molly Daniel and Sydney Weisberg's final project
 4. In the second terminal run `python -m http.server 8000`
 5. Open the server on http://localhost:8000/
 
-# 3D Convex Hull Visualization
-This implementation of 3D convex hull visualization is Sydney and Molly's final project for CSC 372: Applied Algorithms in Spring 2026.
-
 ## Project Description
 The goal of this project is to implement a 3D convex Hull algorithm, develop a detection algorithm to see if two objects collide based on their convex hulls, and create a front-end visualizer.
 ### 3D Convex Hull
