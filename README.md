@@ -6,6 +6,7 @@ Final project for Smith College CS 372 Applied Algorithms
 - `pip install distance3d`
 - `pip install scipy`
 - `pip install flask`
+- `pip install flask_cors`
 2. Open two terminals
 3. In one terminal run `python app.py`
 4. In the second terminal run `python -m http.server 8000`
