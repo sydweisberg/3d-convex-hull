@@ -1,5 +1,5 @@
-# 3d-convex-hull
-Final project for Smith College CS 372 Applied Algorithms
+# 3D Convex Hull
+This GitHub Repository contains Molly Daniel and Sydney Weisberg's final project for CSC 372: Applied Algorithms.
 
 # Installation and Run Instructions
 1. Package Installation
