@@ -2,42 +2,84 @@
 // SETUP
 // ======================
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111111);
-
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-
-camera.position.set(0, 0, 10);
-
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // ======================
+// TWO SCENES
+// ======================
+
+const sceneL = new THREE.Scene();
+const sceneR = new THREE.Scene();
+
+sceneL.background = new THREE.Color(0x111111);
+sceneR.background = new THREE.Color(0x111111);
+
+const cameraL = new THREE.PerspectiveCamera(
+  75,
+  (window.innerWidth / 2) / window.innerHeight,
+  0.1,
+  1000
+);
+
+const cameraR = new THREE.PerspectiveCamera(
+  75,
+  (window.innerWidth / 2) / window.innerHeight,
+  0.1,
+  1000
+);
+
+cameraL.position.set(0, 0, 10);
+cameraR.position.set(0, 0, 10);
+
+// ======================
 // DATA
 // ======================
 
-let points = [];
-let pointMeshes = [];
-let hullMesh = null;
+let pointsL = [];
+let pointsR = [];
+
+let meshesL = [];
+let meshesR = [];
+
+let hullL = null;
+let hullR = null;
 
 // ======================
-// UI EVENT
+// ACTIVE SIDE
 // ======================
 
-document.getElementById("addBtn").addEventListener("click", addPoint);
+let activeSide = "L";
 
-function addPoint() {
+document.getElementById("toggleSide").addEventListener("click", () => {
+  activeSide = activeSide === "L" ? "R" : "L";
+  document.getElementById("toggleSide").innerText =
+    `Active: ${activeSide === "L" ? "LEFT" : "RIGHT"}`;
+});
+
+// ======================
+// POINT INPUT (X Y Z UI)
+// ======================
+
+document.getElementById("addBtn").addEventListener("click", () => {
   const x = parseFloat(document.getElementById("x").value);
   const y = parseFloat(document.getElementById("y").value);
   const z = parseFloat(document.getElementById("z").value);
 
   if (isNaN(x) || isNaN(y) || isNaN(z)) return;
+
+  addPoint(x, y, z);
+});
+
+// ======================
+// ADD POINT
+// ======================
+
+function addPoint(x, y, z) {
+  const scene = activeSide === "L" ? sceneL : sceneR;
+  const points = activeSide === "L" ? pointsL : pointsR;
+  const meshes = activeSide === "L" ? meshesL : meshesR;
 
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(0.12),
@@ -47,17 +89,19 @@ function addPoint() {
   sphere.position.set(x, y, z);
   scene.add(sphere);
 
-  pointMeshes.push(sphere);
+  meshes.push(sphere);
   points.push([x, y, z]);
 
-  updateHull();
+  updateHull(activeSide);
 }
 
 // ======================
 // BACKEND CALL
 // ======================
 
-async function updateHull() {
+async function updateHull(side) {
+  const points = side === "L" ? pointsL : pointsR;
+
   if (points.length < 4) return;
 
   const res = await fetch("http://127.0.0.1:5000/hull", {
@@ -68,17 +112,20 @@ async function updateHull() {
 
   const data = await res.json();
 
-  drawHull(data);
+  drawHull(side, data);
 }
 
 // ======================
-// RENDER HULL
+// DRAW HULL (COLORED FACES)
 // ======================
 
-function drawHull(data) {
+function drawHull(side, data) {
   if (!data || !data.simplices) return;
 
-  if (hullMesh) scene.remove(hullMesh);
+  const scene = side === "L" ? sceneL : sceneR;
+
+  if (side === "L" && hullL) scene.remove(hullL);
+  if (side === "R" && hullR) scene.remove(hullR);
 
   const positions = [];
   const colors = [];
@@ -88,13 +135,10 @@ function drawHull(data) {
     const b = data.vertices[face[1]];
     const c = data.vertices[face[2]];
 
-    // random color per face
     const color = new THREE.Color(Math.random(), Math.random(), Math.random());
 
-    // push vertices
     positions.push(...a, ...b, ...c);
 
-    // same color for all 3 vertices of the triangle
     for (let i = 0; i < 3; i++) {
       colors.push(color.r, color.g, color.b);
     }
@@ -112,32 +156,34 @@ function drawHull(data) {
     new THREE.Float32BufferAttribute(colors, 3)
   );
 
-  hullMesh = new THREE.Mesh(
+  const mesh = new THREE.Mesh(
     geometry,
     new THREE.MeshBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       side: THREE.DoubleSide
     })
   );
 
-  scene.add(hullMesh);
+  scene.add(mesh);
+
+  if (side === "L") hullL = mesh;
+  else hullR = mesh;
 }
 
 // ======================
-// CAMERA CONTROLS
+// RIGHT CLICK ORBIT (BOTH CAMERAS SHARED LOGIC)
 // ======================
 
 let isRightMouseDown = false;
-
-let theta = 0;   // horizontal angle
-let phi = 0;     // vertical angle
-let radius = 10; // zoom distance
-
-let target = new THREE.Vector3(0, 0, 0);
+let theta = 0;
+let phi = 0;
+let radius = 10;
 
 let lastMouse = { x: 0, y: 0 };
+
+window.addEventListener("contextmenu", e => e.preventDefault());
 
 window.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
@@ -156,8 +202,8 @@ window.addEventListener("mouseup", (e) => {
 window.addEventListener("mousemove", (e) => {
   if (!isRightMouseDown) return;
 
-  let dx = e.clientX - lastMouse.x;
-  let dy = e.clientY - lastMouse.y;
+  const dx = e.clientX - lastMouse.x;
+  const dy = e.clientY - lastMouse.y;
 
   lastMouse.x = e.clientX;
   lastMouse.y = e.clientY;
@@ -167,30 +213,51 @@ window.addEventListener("mousemove", (e) => {
   theta -= dx * sensitivity;
   phi -= dy * sensitivity;
 
-  // clamp vertical rotation
   phi = Math.max(-1.5, Math.min(1.5, phi));
 });
 
 window.addEventListener("wheel", (e) => {
   radius += e.deltaY * 0.01;
+
+  // clamp zoom so you don't break the scene
   radius = Math.max(2, Math.min(50, radius));
 });
 
 // ======================
-// LOOP
+// RENDER LOOP (SPLIT SCREEN)
 // ======================
 
 function animate() {
   requestAnimationFrame(animate);
 
-  // spherical orbit camera
-  camera.position.x = target.x + radius * Math.cos(phi) * Math.sin(theta);
-  camera.position.y = target.y + radius * Math.sin(phi);
-  camera.position.z = target.z + radius * Math.cos(phi) * Math.cos(theta);
+  const width = window.innerWidth;
+  const height = window.innerHeight;
 
-  camera.lookAt(target);
+  const x = radius * Math.cos(phi) * Math.sin(theta);
+  const y = radius * Math.sin(phi);
+  const z = radius * Math.cos(phi) * Math.cos(theta);
 
-  renderer.render(scene, camera);
+  // LEFT CAMERA
+  cameraL.position.set(x, y, z);
+  cameraL.lookAt(0, 0, 0);
+
+  // RIGHT CAMERA
+  cameraR.position.set(x, y, z);
+  cameraR.lookAt(0, 0, 0);
+
+  renderer.setScissorTest(true);
+
+  // LEFT VIEW
+  renderer.setViewport(0, 0, width / 2, height);
+  renderer.setScissor(0, 0, width / 2, height);
+  renderer.render(sceneL, cameraL);
+
+  // RIGHT VIEW
+  renderer.setViewport(width / 2, 0, width / 2, height);
+  renderer.setScissor(width / 2, 0, width / 2, height);
+  renderer.render(sceneR, cameraR);
+
+  renderer.setScissorTest(false);
 }
 
 animate();
