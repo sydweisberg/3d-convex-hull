@@ -1,26 +1,50 @@
 // ======================
+// CONFIG
+// ======================
+
+const API = "http://localhost:5000";
+
+// ======================
 // RENDERER
 // ======================
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
+window.addEventListener("resize", () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
 // ======================
-// SCENES + CAMERAS
+// SCENE + CAMERA
 // ======================
 
-const sceneL = new THREE.Scene();
-const sceneR = new THREE.Scene();
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111827);
 
-sceneL.background = new THREE.Color(0x36454F);
-sceneR.background = new THREE.Color(0x36454F);
+const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 14);
 
-const cameraL = new THREE.PerspectiveCamera(75, window.innerWidth/2/window.innerHeight, 0.1, 1000);
-const cameraR = new THREE.PerspectiveCamera(75, window.innerWidth/2/window.innerHeight, 0.1, 1000);
+// ======================
+// LIGHTS
+// ======================
 
-cameraL.position.set(0, 0, 10);
-cameraR.position.set(0, 0, 10);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 10, 7);
+scene.add(dirLight);
+
+// ======================
+// GRID
+// ======================
+
+const grid = new THREE.GridHelper(30, 30, 0x1e3a5f, 0x162030);
+grid.position.y = -5;
+scene.add(grid);
 
 // ======================
 // GROUPS
@@ -28,22 +52,8 @@ cameraR.position.set(0, 0, 10);
 
 const groupL = new THREE.Group();
 const groupR = new THREE.Group();
-
-sceneL.add(groupL);
-sceneR.add(groupR);
-
-// ======================
-// GRIDS
-// ======================
-
-function makeGrid() {
-  const g = new THREE.GridHelper(20, 20, 0x4a6a5a, 0x2a3a32);
-  g.position.y = -4;
-  return g;
-}
-
-sceneL.add(makeGrid());
-sceneR.add(makeGrid());
+scene.add(groupL);
+scene.add(groupR);
 
 // ======================
 // STATE
@@ -52,51 +62,86 @@ sceneR.add(makeGrid());
 let pointsL = [];
 let pointsR = [];
 
-let meshesL = [];
-let meshesR = [];
-
 let hullL = null;
 let hullR = null;
 
 let activeSide = "L";
-let editMode = true;
+let editMode   = true;
 
-let overlapT = 0;
+let offsetL = 0;
+let offsetR = 0;
+
+let gjkDebounce = null;
+
+// ======================
+// COLORS
+// ======================
+
+const COLOR_L   = new THREE.Color(0x4fc3f7);
+const COLOR_R   = new THREE.Color(0xf48fb1);
+const COLOR_COL = new THREE.Color(0xff6e6e);
 
 // ======================
 // UI
 // ======================
 
-document.getElementById("toggleSide").addEventListener("click", () => {
+const btnToggleSide = document.getElementById("toggleSide");
+const btnToggleEdit = document.getElementById("toggleEdit");
+const btnAdd        = document.getElementById("addBtn");
+const btnReset      = document.getElementById("resetView");
+const slider        = document.getElementById("overlapSlider");
+const editRow       = document.getElementById("edit-row");
+const sliderRow     = document.getElementById("slider-row");
+const statusBadge   = document.getElementById("collision-status");
+const dragHint      = document.getElementById("drag-hint");
+
+btnToggleSide.addEventListener("click", () => {
   activeSide = activeSide === "L" ? "R" : "L";
-  document.getElementById("toggleSide").innerText =
-    `Active: ${activeSide === "L" ? "LEFT" : "RIGHT"}`;
+  btnToggleSide.innerText = `Active: ${activeSide === "L" ? "LEFT" : "RIGHT"}`;
+  btnToggleSide.className = activeSide === "L" ? "active-l" : "active-r";
 });
 
-document.getElementById("toggleEdit").addEventListener("click", () => {
+btnToggleEdit.addEventListener("click", () => {
   editMode = !editMode;
-  document.getElementById("toggleEdit").innerText =
-    `Edit Mode: ${editMode ? "ON" : "OFF"}`;
+  btnToggleEdit.innerText = `Edit Mode: ${editMode ? "ON" : "OFF"}`;
+  btnToggleEdit.className = editMode ? "edit-on" : "edit-off";
+  editRow.style.display   = editMode ? "flex"   : "none";
+  sliderRow.style.display = editMode ? "none"   : "flex";
+  dragHint.style.display  = editMode ? "none"   : "block";
+
+  if (!editMode) {
+    offsetL = -5;
+    offsetR =  5;
+    updateGroupPositions();
+    statusBadge.className = "idle";
+    statusBadge.innerText = "—";
+  } else {
+    offsetL = 0;
+    offsetR = 0;
+    updateGroupPositions();
+  }
 });
 
-document.getElementById("addBtn").addEventListener("click", () => {
+btnAdd.addEventListener("click", () => {
   if (!editMode) return;
-
-  const x = parseFloat(document.getElementById("x").value);
-  const y = parseFloat(document.getElementById("y").value);
-  const z = parseFloat(document.getElementById("z").value);
-
+  const x = parseFloat(document.getElementById("x").value) || 0;
+  const y = parseFloat(document.getElementById("y").value) || 0;
+  const z = parseFloat(document.getElementById("z").value) || 0;
   addPoint(x, y, z);
 });
 
-document.getElementById("overlapSlider").addEventListener("input", (e) => {
-  overlapT = parseFloat(e.target.value);
+btnReset.addEventListener("click", () => {
+  theta = 0; phi = 0.2; radius = 14;
 });
 
-document.getElementById("resetView").addEventListener("click", () => {
-  theta = 0;
-  phi = 0;
-  radius = 10;
+slider.addEventListener("input", () => {
+  if (editMode) return;
+  const t = parseFloat(slider.value); // 0 = far apart, 1 = fully overlapping
+  // t=0 → ±10 apart, t=0.5 → touching at origin, t=1 → ±2 overlapping
+  offsetL = -10 + t * 12;
+  offsetR =  10 - t * 12;
+  updateGroupPositions();
+  scheduleGjk();
 });
 
 // ======================
@@ -104,126 +149,54 @@ document.getElementById("resetView").addEventListener("click", () => {
 // ======================
 
 function addPoint(x, y, z) {
-  const group = activeSide === "L" ? groupL : groupR;
+  const group  = activeSide === "L" ? groupL  : groupR;
   const points = activeSide === "L" ? pointsL : pointsR;
-  const meshes = activeSide === "L" ? meshesL : meshesR;
+  const color  = activeSide === "L" ? COLOR_L : COLOR_R;
 
   const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12),
-    new THREE.MeshBasicMaterial({ color: "white" })
+    new THREE.SphereGeometry(0.14, 12, 8),
+    new THREE.MeshBasicMaterial({ color })
   );
-
   sphere.position.set(x, y, z);
   group.add(sphere);
-
-  meshes.push(sphere);
   points.push([x, y, z]);
 
-  updateHull(activeSide);
+  fetchAndDrawHull(activeSide);
 }
 
 // ======================
-// CONVEX HULL (JS)
+// JS CONVEX HULL (no backend needed for visuals)
 // ======================
 
-function computeConvexHull(rawPoints) {
-  const seen = new Set();
-  const pts = [];
-  for (const p of rawPoints) {
-    const k = `${p[0].toFixed(8)},${p[1].toFixed(8)},${p[2].toFixed(8)}`;
-    if (!seen.has(k)) { seen.add(k); pts.push([p[0], p[1], p[2]]); }
-  }
-  if (pts.length < 4) return null;
-
-  const sub   = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
-  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
-  const dot   = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-  const norm  = v => { const l = Math.sqrt(dot(v,v)); return l < 1e-12 ? null : [v[0]/l, v[1]/l, v[2]/l]; };
-
-  function makeFace(i0, i1, i2, insideIdx) {
-    const n = cross(sub(pts[i1], pts[i0]), sub(pts[i2], pts[i0]));
-    const nn = norm(n);
-    if (!nn) return null;
-    const off = dot(nn, pts[i0]);
-    const d = dot(nn, pts[insideIdx]) - off;
-    if (d > 0) return { verts: [i0, i2, i1], normal: [-nn[0],-nn[1],-nn[2]], offset: -off };
-    return           { verts: [i0, i1, i2], normal: nn, offset: off };
-  }
-
-  let seed = null;
-  outer:
-  for (let a = 0; a < pts.length; a++)
-  for (let b = a+1; b < pts.length; b++)
-  for (let c = b+1; c < pts.length; c++) {
-    const n = cross(sub(pts[b], pts[a]), sub(pts[c], pts[a]));
-    if (dot(n,n) < 1e-14) continue;
-    const nn = norm(n), off = dot(nn, pts[a]);
-    for (let d = c+1; d < pts.length; d++) {
-      if (Math.abs(dot(nn, pts[d]) - off) > 1e-8) { seed = [a,b,c,d]; break outer; }
-    }
-  }
-  if (!seed) return null;
-
-  const [s0,s1,s2,s3] = seed;
-  let faces = [
-    makeFace(s0,s1,s2,s3), makeFace(s0,s1,s3,s2),
-    makeFace(s0,s2,s3,s1), makeFace(s1,s2,s3,s0),
-  ].filter(Boolean);
-
-  for (let pi = 0; pi < pts.length; pi++) {
-    if (seed.includes(pi)) continue;
-    const p = pts[pi];
-
-    const visible = faces.filter(f => dot(f.normal, p) - f.offset > 1e-8);
-    if (visible.length === 0) continue;
-
-    const edgeCount = new Map();
-    for (const f of visible) {
-      const v = f.verts;
-      for (const [a, b] of [[v[0],v[1]], [v[1],v[2]], [v[2],v[0]]]) {
-        const key = a < b ? `${a},${b}` : `${b},${a}`;
-        edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
-      }
-    }
-    const horizon = [];
-    for (const [key, cnt] of edgeCount)
-      if (cnt === 1) horizon.push(key.split(',').map(Number));
-
-    faces = faces.filter(f => !visible.includes(f));
-
-    let cx = 0, cy = 0, cz = 0, n = 0;
-    for (const f of faces) for (const vi of f.verts) {
-      cx += pts[vi][0]; cy += pts[vi][1]; cz += pts[vi][2]; n++;
-    }
-    if (n === 0) continue;
-    const interior = [cx/n, cy/n, cz/n];
-
-    for (const [a, b] of horizon) {
-      const nf = makeFace(pi, a, b, -1);
-      if (!nf) continue;
-      if (dot(nf.normal, interior) - nf.offset > 0) {
-        nf.verts  = [nf.verts[0], nf.verts[2], nf.verts[1]];
-        nf.normal = [-nf.normal[0], -nf.normal[1], -nf.normal[2]];
-        nf.offset = -nf.offset;
-      }
-      faces.push(nf);
-    }
-  }
-
-  return { vertices: pts, simplices: faces.map(f => f.verts) };
-}
-
-// ======================
-// UPDATE HULL
-// ======================
-
-function updateHull(side) {
+async function fetchAndDrawHull(side) {
   const points = side === "L" ? pointsL : pointsR;
+  console.log(`[hull] side=${side} points=${points.length}`);
+  if (points.length < 4) {
+    console.log(`[hull] skipping — need at least 4, have ${points.length}`);
+    return;
+  }
 
-  if (points.length < 4) return;
+  const url = `${API}/hull`;
+  console.log(`[hull] POSTing to ${url}`, points);
 
-  const data = computeConvexHull(points);
-  drawHull(side, data);
+  try {
+    const res = await fetch(url, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ points })
+    });
+    console.log(`[hull] response status: ${res.status}`);
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("[hull] non-OK response:", txt);
+      return;
+    }
+    const data = await res.json();
+    console.log(`[hull] got ${data.simplices?.length} faces`);
+    drawHull(side, data);
+  } catch (e) {
+    console.error("[hull] fetch threw:", e);
+  }
 }
 
 // ======================
@@ -233,132 +206,311 @@ function updateHull(side) {
 function drawHull(side, data) {
   if (!data || !data.simplices) return;
 
-  const group = side === "L" ? groupL : groupR;
+  const group     = side === "L" ? groupL  : groupR;
+  const baseColor = side === "L" ? COLOR_L : COLOR_R;
 
-  if (side === "L" && hullL) group.remove(hullL);
-  if (side === "R" && hullR) group.remove(hullR);
+  if (side === "L" && hullL) { group.remove(hullL); hullL = null; }
+  if (side === "R" && hullR) { group.remove(hullR); hullR = null; }
 
   const positions = [];
-  const colors = [];
+  const colors    = [];
 
   data.simplices.forEach(face => {
     const a = data.vertices[face[0]];
     const b = data.vertices[face[1]];
     const c = data.vertices[face[2]];
 
-    const color = new THREE.Color(Math.random(), Math.random(), Math.random());
+    const fc = baseColor.clone();
+    fc.offsetHSL(0, 0, (Math.random() - 0.5) * 0.1);
 
     positions.push(...a, ...b, ...c);
-
-    for (let i = 0; i < 3; i++) {
-      colors.push(color.r, color.g, color.b);
-    }
+    for (let i = 0; i < 3; i++) colors.push(fc.r, fc.g, fc.b);
   });
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color",    new THREE.Float32BufferAttribute(colors,    3));
 
-  const mesh = new THREE.Mesh(
-    geometry,
-    new THREE.MeshBasicMaterial({
-      vertexColors: true,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.85
-    })
-  );
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    side:         THREE.DoubleSide,
+    transparent:  true,
+    opacity:      0.72,
+  }));
+
+  mesh.add(new THREE.LineSegments(
+    new THREE.WireframeGeometry(geo),
+    new THREE.LineBasicMaterial({ color: baseColor, transparent: true, opacity: 0.4 })
+  ));
 
   group.add(mesh);
 
   if (side === "L") hullL = mesh;
-  else hullR = mesh;
+  else              hullR = mesh;
 }
 
 // ======================
-// ORBIT CAMERA (SHARED)
+// GROUP POSITIONS
 // ======================
 
-let theta = 0;
-let phi = 0;
-let radius = 10;
+function updateGroupPositions() {
+  groupL.position.x = offsetL;
+  groupR.position.x = offsetR;
+  // Y and Z are managed directly by the drag handler
+}
 
-let dragging = false;
+// ======================
+// GJK
+// ======================
+
+function scheduleGjk() {
+  clearTimeout(gjkDebounce);
+  gjkDebounce = setTimeout(runGjk, 60);
+}
+
+async function runGjk() {
+  if (pointsL.length < 4 || pointsR.length < 4) return;
+
+  try {
+    const res = await fetch(`${API}/gjk`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        pointsL: pointsL,
+        pointsR: pointsR,
+        offsetL: [groupL.position.x, groupL.position.y, groupL.position.z],
+        offsetR: [groupR.position.x, groupR.position.y, groupR.position.z],
+      })
+    });
+
+    if (!res.ok) { console.warn("GJK error", await res.json()); return; }
+
+    const result = await res.json();
+    updateCollisionFeedback(result);
+  } catch (e) {
+    console.warn("GJK fetch failed:", e);
+  }
+}
+
+function updateCollisionFeedback(gjk) {
+  if (gjk.colliding) {
+    statusBadge.className = "hit";
+    statusBadge.innerText = "COLLISION";
+    tintHulls(true);
+  } else {
+    statusBadge.className = "clear";
+    statusBadge.innerText = `CLEAR  d=${gjk.distance.toFixed(2)}`;
+    tintHulls(false);
+  }
+}
+
+function tintHulls(colliding) {
+  [{ hull: hullL }, { hull: hullR }].forEach(({ hull }) => {
+    if (!hull) return;
+    const mat = hull.material;
+    mat.vertexColors = !colliding;
+    mat.color        = colliding ? COLOR_COL : new THREE.Color(0xffffff);
+    mat.opacity      = colliding ? 0.85 : 0.72;
+    mat.needsUpdate  = true;
+  });
+}
+
+// ======================
+// DRAG SHAPES (move mode)
+// ======================
+//
+// Hit detection: raycast against a bounding sphere for each group so you
+// must actually click ON a shape to grab it.
+//
+// Movement: unproject mouse onto a plane that faces the camera and passes
+// through the shape's center — this gives natural XY drag regardless of
+// orbit angle, not just along the world X axis.
+// ======================
+
+let shapeDragging   = null;
+let dragPlane       = new THREE.Plane();   // camera-facing plane at shape center
+let dragOffset      = new THREE.Vector3(); // offset from shape center to click point
+let dragGroupOffset = new THREE.Vector3(); // world position of group at drag start
+let raycaster       = new THREE.Raycaster();
+
+// Compute a bounding sphere for a group using its actual world position.
+// Only considers the point spheres (SphereGeometry children), not the hull
+// mesh, whose baked vertex positions inflate the radius incorrectly.
+function groupBoundingSphere(group) {
+  const center = group.position.clone(); // world-space center
+  let maxR = 0;
+  group.children.forEach(child => {
+    // Point spheres are direct Mesh children with a position set to the point coord.
+    // Hull meshes sit at position (0,0,0) and have huge baked geometry — skip them.
+    if (child.isMesh && (child.position.x !== 0 || child.position.y !== 0 || child.position.z !== 0)) {
+      maxR = Math.max(maxR, child.position.length() + 0.2); // 0.2 = sphere visual radius
+    }
+  });
+  return { center, radius: Math.max(maxR, 1.5) };
+}
+
+// Unproject mouse to a 3D point on a given plane
+function mouseOnPlane(clientX, clientY, plane) {
+  const ndc = new THREE.Vector2(
+    (clientX / window.innerWidth)  *  2 - 1,
+    (clientY / window.innerHeight) * -2 + 1
+  );
+  raycaster.setFromCamera(ndc, camera);
+  const hit = new THREE.Vector3();
+  raycaster.ray.intersectPlane(plane, hit);
+  return hit;
+}
+
+renderer.domElement.addEventListener("mousedown", (e) => {
+  if (editMode || e.button !== 0) return;
+
+  const ndc = new THREE.Vector2(
+    (e.clientX / window.innerWidth)  *  2 - 1,
+    (e.clientY / window.innerHeight) * -2 + 1
+  );
+  raycaster.setFromCamera(ndc, camera);
+
+  // Test both shapes via bounding sphere
+  const bsL = groupBoundingSphere(groupL);
+  const bsR = groupBoundingSphere(groupR);
+
+  const hitL = raycaster.ray.intersectSphere(new THREE.Sphere(bsL.center, bsL.radius), new THREE.Vector3());
+  const hitR = raycaster.ray.intersectSphere(new THREE.Sphere(bsR.center, bsR.radius), new THREE.Vector3());
+
+  if (!hitL && !hitR) return; // clicked empty space
+
+  // Pick closer hit
+  let side, center;
+  if (hitL && hitR) {
+    const dL = hitL.distanceTo(camera.position);
+    const dR = hitR.distanceTo(camera.position);
+    side   = dL <= dR ? "L" : "R";
+    center = dL <= dR ? bsL.center : bsR.center;
+  } else if (hitL) {
+    side = "L"; center = bsL.center;
+  } else {
+    side = "R"; center = bsR.center;
+  }
+
+  shapeDragging = side;
+  const group = side === "L" ? groupL : groupR;
+
+  // Build a plane facing the camera, passing through the shape center
+  const camDir = new THREE.Vector3();
+  camera.getWorldDirection(camDir);
+  dragPlane.setFromNormalAndCoplanarPoint(camDir, center);
+
+  // Record full world position of group at drag start
+  dragGroupOffset.copy(group.position);
+
+  // Offset from shape center to the actual click point on the plane
+  const clickWorld = mouseOnPlane(e.clientX, e.clientY, dragPlane);
+  if (clickWorld) dragOffset.copy(clickWorld).sub(center);
+
+  renderer.domElement.style.cursor = "grabbing";
+  e.preventDefault();
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (!shapeDragging) {
+    if (!editMode) {
+      // Cursor hint: show grab when hovering over a shape
+      const ndc = new THREE.Vector2(
+        (e.clientX / window.innerWidth)  *  2 - 1,
+        (e.clientY / window.innerHeight) * -2 + 1
+      );
+      raycaster.setFromCamera(ndc, camera);
+      const bsL = groupBoundingSphere(groupL);
+      const bsR = groupBoundingSphere(groupR);
+      const onL = raycaster.ray.intersectSphere(new THREE.Sphere(bsL.center, bsL.radius), new THREE.Vector3());
+      const onR = raycaster.ray.intersectSphere(new THREE.Sphere(bsR.center, bsR.radius), new THREE.Vector3());
+      renderer.domElement.style.cursor = (onL || onR) ? "grab" : "default";
+    }
+    return;
+  }
+
+  const worldPoint = mouseOnPlane(e.clientX, e.clientY, dragPlane);
+  if (!worldPoint) return;
+
+  // New group center = mouse world pos minus the original click offset
+  const newCenter = worldPoint.clone().sub(dragOffset);
+
+  // Clamp movement to the drag plane by removing any component along the
+  // camera-forward axis (prevents depth drift when the plane isn't perfectly
+  // perpendicular to the ray, e.g. at grazing angles)
+  const camDir = new THREE.Vector3();
+  camera.getWorldDirection(camDir);
+  const depthComponent = camDir.clone().multiplyScalar(newCenter.dot(camDir));
+  const groupStartDepth = camDir.clone().multiplyScalar(dragGroupOffset.dot(camDir));
+  newCenter.sub(depthComponent).add(groupStartDepth);
+
+  if (shapeDragging === "L") {
+    offsetL = newCenter.x;
+    groupL.position.copy(newCenter);
+  } else {
+    offsetR = newCenter.x;
+    groupR.position.copy(newCenter);
+  }
+
+  scheduleGjk();
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (e.button === 0) {
+    shapeDragging = null;
+    renderer.domElement.style.cursor = "default";
+  }
+});
+
+// ======================
+// ORBIT (right-drag always; left-drag in edit mode)
+// ======================
+
+let theta    = 0;
+let phi      = 0.2;
+let radius   = 14;
+let orbiting = false;
 let lastMouse = { x: 0, y: 0 };
 
 window.addEventListener("contextmenu", e => e.preventDefault());
 
-window.addEventListener("mousedown", (e) => {
-  if (e.button === 2) {
-    dragging = true;
+renderer.domElement.addEventListener("mousedown", (e) => {
+  if (e.button === 2 || (e.button === 0 && editMode)) {
+    orbiting = true;
     lastMouse.x = e.clientX;
     lastMouse.y = e.clientY;
   }
 });
 
-window.addEventListener("mouseup", (e) => {
-  if (e.button === 2) dragging = false;
-});
-
+window.addEventListener("mouseup",   () => { orbiting = false; });
 window.addEventListener("mousemove", (e) => {
-  if (!dragging) return;
-
-  const dx = e.clientX - lastMouse.x;
-  const dy = e.clientY - lastMouse.y;
-
+  if (!orbiting || shapeDragging) return;
+  theta -= (e.clientX - lastMouse.x) * 0.005;
+  phi   -= (e.clientY - lastMouse.y) * 0.005;
+  phi    = Math.max(-1.4, Math.min(1.4, phi));
   lastMouse.x = e.clientX;
   lastMouse.y = e.clientY;
-
-  theta -= dx * 0.005;
-  phi -= dy * 0.005;
-
-  phi = Math.max(-1.5, Math.min(1.5, phi));
 });
 
 window.addEventListener("wheel", (e) => {
-  radius += e.deltaY * 0.01;
-  radius = Math.max(2, Math.min(50, radius));
+  radius = Math.max(2, Math.min(50, radius + e.deltaY * 0.01));
 });
 
 // ======================
-// RENDER LOOP (SPLIT SCREEN)
+// RENDER LOOP
 // ======================
 
 function animate() {
   requestAnimationFrame(animate);
 
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  camera.position.set(
+    radius * Math.cos(phi) * Math.sin(theta),
+    radius * Math.sin(phi),
+    radius * Math.cos(phi) * Math.cos(theta)
+  );
+  camera.lookAt(0, 0, 0);
 
-  const x = radius * Math.cos(phi) * Math.sin(theta);
-  const y = radius * Math.sin(phi);
-  const z = radius * Math.cos(phi) * Math.cos(theta);
-
-  cameraL.position.set(x, y, z);
-  cameraR.position.set(x, y, z);
-
-  cameraL.lookAt(0, 0, 0);
-  cameraR.lookAt(0, 0, 0);
-
-  const maxDistance = 25;
-  const offset = (overlapT - 0.5) * maxDistance * 2;
-
-  groupL.position.x = -offset;
-  groupR.position.x = offset;
-
-  renderer.setScissorTest(true);
-
-  // LEFT
-  renderer.setViewport(0, 0, w/2, h);
-  renderer.setScissor(0, 0, w/2, h);
-  renderer.render(sceneL, cameraL);
-
-  // RIGHT
-  renderer.setViewport(w/2, 0, w/2, h);
-  renderer.setScissor(w/2, 0, w/2, h);
-  renderer.render(sceneR, cameraR);
-
-  renderer.setScissorTest(false);
+  renderer.render(scene, camera);
 }
 
 animate();

@@ -1,0 +1,5 @@
+flask
+flask-cors
+scipy
+numpy
+distance3d
