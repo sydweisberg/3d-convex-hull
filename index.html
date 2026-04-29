@@ -2,17 +2,31 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>3D Convex Hull Viewer</title>
+  <title>3D Convex Hull Split Viewer</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
+<div id="divider"></div>
+<span class="side-label" id="label-l">LEFT</span>
+<span class="side-label" id="label-r">RIGHT</span>
+
 <div id="ui">
-  <button id="toggleSide">Active: LEFT</button>
-  <input id="x" placeholder="x" type="number" step="0.1">
-  <input id="y" placeholder="y" type="number" step="0.1">
-  <input id="z" placeholder="z" type="number" step="0.1">
-  <button id="addBtn">Add Point</button>
+  <div class="row">
+    <div class="coord-group"><label>x</label><input id="x" placeholder="0" type="number" value="0"></div>
+    <div class="coord-group"><label>y</label><input id="y" placeholder="0" type="number" value="0"></div>
+    <div class="coord-group"><label>z</label><input id="z" placeholder="0" type="number" value="0"></div>
+    <button id="addBtn">Add Point</button>
+  </div>
+  <div class="row">
+    <button id="toggleSide">Active: LEFT</button>
+    <button id="toggleEdit">Edit Mode: ON</button>
+    <button id="resetView">Reset View</button>
+  </div>
+  <div id="slider-row">
+    <label>Separation</label>
+    <input id="overlapSlider" type="range" min="0" max="1" step="0.005" value="0">
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>

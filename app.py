@@ -8,11 +8,16 @@ CORS(app)
 
 def compute_hull(points):
     pts = np.array(points)
+    pts = np.unique(pts, axis=0)
 
-    if len(pts) < 4:
+    if np.linalg.matrix_rank(pts - pts[0]) < 3:
         return None
 
-    hull = ConvexHull(pts)
+    try:
+        hull = ConvexHull(pts)
+    except Exception as e:
+        print("ConvexHull failed:", e)
+        return None
 
     return {
         "vertices": pts.tolist(),
