@@ -2,20 +2,136 @@ body {
   margin: 0;
   overflow: hidden;
   background: #faacd7;
+  font-family: "Monaco", monospace;
 }
 
 #ui {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: #faacd7;
-  padding: 10px;
-  color: rgb(0, 0, 0);
-  font-family: monospace;
   z-index: 10;
+  background: #f48cbf;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: white;
+  font-family: "Monaco", monospace;
+  font-size: 12px;
+  box-shadow: 0 4px 18px rgba(200, 80, 140, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-input {
-  width: 60px;
-  margin-right: 5px;
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
+
+.coord-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.coord-group label {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+input[type="number"] {
+  width: 56px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-family: "Monaco", monospace;
+  font-size: 12px;
+  padding: 4px 6px;
+  outline: none;
+}
+
+input[type="number"]::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+  opacity: 0;
+}
+
+input[type="number"]:focus {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: white;
+}
+
+button {
+  font-family: "Monaco", monospace;
+  font-size: 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button:hover  { background: rgba(255, 255, 255, 0.35); }
+button:active { background: rgba(255, 255, 255, 0.5); }
+
+#slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#slider-row label {
+  font-size: 10px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 240px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 6px rgba(200, 80, 140, 0.5);
+}
+
+#divider {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.side-label {
+  position: absolute;
+  top: 10px;
+  font-family: "Monaco", monospace;
+  font-size: 12px;
+  color: white;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 6;
+}
+
+#label-l { left: calc(50% - 120px); }
+#label-r { left: calc(50% + 60px); }
