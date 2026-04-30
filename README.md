@@ -12,6 +12,18 @@ This GitHub Repository contains Molly Daniel and Sydney Weisberg's final project
 4. In the second terminal run `python -m http.server 8000`
 5. Open the server on http://localhost:8000/
 
+## Visualization Instructions
+- Press and hold left click to move around the 3D space
+- Use the mouse scroll wheel to zoom in and out
+- In "Edit" mode, you can add new points to an object using xyz coordinates by entering them in their respective boxes and clicking the `+ Add Point` button
+- You can swap between the left and right objects by clicking the `Active` button
+- If you would like to prepopulate an object with points forming a tetrahedron, click the `Sample Tetrahedron` button
+- The `Reset View` button resets the view of the 3D space to what it originally was
+- To go to collision detection mode, click the `Collision Mode` button
+- You can drag the objects around by left clicking, holding, and moving them around
+- The slider at the bottom of the screen moves the two objects closer together across the X coordinate
+- The convex hull is automatically calculated, and if two objects collide, collision detection will trigger
+
 ## Project Description
 The goal of this project is to implement a 3D convex Hull algorithm, develop a detection algorithm to see if two objects collide based on their convex hulls, and create a front-end visualizer.
 ### 3D Convex Hull
