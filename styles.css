@@ -1,18 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #1a1f2e;
-  --panel:     #0d1117cc;
-  --border:    #2a3550;
-  --accent-l:  #4fc3f7;
-  --accent-r:  #f48fb1;
-  --accent-ok: #69f0ae;
-  --accent-hi: #ff6e6e;
-  --text:      #cdd9f0;
-  --muted:     #556070;
-  --font:      'JetBrains Mono', monospace;
+  --bg:        #8b96cb;
+  --panel:     #eaeeff;
+  --border:    #8b96cb;
+  --accent-l:  #82bfb7;
+  --accent-r:  #f2a2bd;
+  --accent-ok: #8b96cb;
+  --accent-hi: #8b96cb;
+  --text:      #8b96cb;
+  --muted:     #eaeeff;
+  --font:      'Cherry Bomb One';
 }
 
 html, body {
@@ -38,15 +38,15 @@ canvas { display: block; }
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 14px 18px;
+  padding: 20px 28px;
   backdrop-filter: blur(12px);
-  min-width: 520px;
+  min-width: 620px; 
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
 .coord-group {
@@ -64,7 +64,7 @@ canvas { display: block; }
 
 input[type="number"] {
   width: 62px;
-  background: #0d111799;
+  background: #eaeeff;
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text);
@@ -77,7 +77,7 @@ input[type="number"] {
 input[type="number"]:focus { border-color: var(--accent-l); }
 
 button {
-  background: #0d111799;
+  background: #eaeeff;
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text);
@@ -90,12 +90,25 @@ button {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
 }
-button:hover { background: #1e2740; border-color: #4a6080; color: #fff; }
+button:hover { background: #8b96cb; border-color: #8b96cb; color: #eaeeff; }
 
-button.active-l { border-color: var(--accent-l); color: var(--accent-l); background: #4fc3f711; }
-button.active-r { border-color: var(--accent-r); color: var(--accent-r); background: #f48fb111; }
-button.edit-on  { border-color: var(--accent-ok); color: var(--accent-ok); background: #69f0ae11; }
-button.edit-off { border-color: var(--muted); color: var(--muted); }
+button.active-l { border-color: var(--accent-l); color: var(--accent-l); background: #eaeeff; }
+button.active-r { border-color: var(--accent-r); color: var(--accent-r); background: #eaeeff; }
+button.edit-on  { border-color: var(--accent-ok); color: var(--accent-ok); background: #eaeeff; }
+button.edit-off { border-color: #eaeeff; color: #eaeeff; background: #8b96cb; }
+
+#title {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text);
+  z-index: 30;
+  pointer-events: none;
+}
 
 /* ─── slider row ─── */
 #slider-row {
@@ -106,7 +119,7 @@ button.edit-off { border-color: var(--muted); color: var(--muted); }
 #slider-row label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: #8b96cb;
   letter-spacing: 0.1em;
   min-width: 70px;
 }
@@ -140,32 +153,32 @@ input[type="range"]::-webkit-slider-thumb:hover { background: #fff; }
   text-align: center;
 }
 #collision-status.clear {
-  color: var(--accent-ok);
-  border: 1px solid var(--accent-ok);
-  background: #69f0ae11;
+  color: #8b96cb;
+  border: 1px solid #8b96cb;
+  background: #8b96cb11;
 }
 #collision-status.hit {
-  color: var(--accent-hi);
-  border: 1px solid var(--accent-hi);
-  background: #ff6e6e22;
+  color: #8b96cb;
+  border: 1px solid #8b96cb;
+  background: #8b96cb22;
   animation: pulse 0.4s ease;
 }
 #collision-status.idle {
-  color: var(--muted);
+  color: #8b96cb;
   border: 1px solid var(--border);
   background: transparent;
 }
 
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 #ff6e6e44; }
-  70%  { box-shadow: 0 0 0 8px #ff6e6e00; }
-  100% { box-shadow: 0 0 0 0 #ff6e6e00; }
+  0%   { box-shadow: 0 0 0 0 #8b96cb44; }
+  70%  { box-shadow: 0 0 0 8px #8b96cb00; }
+  100% { box-shadow: 0 0 0 0 #8b96cb00; }
 }
 
 /* ─── drag hint ─── */
 #drag-hint {
   font-size: 10px;
-  color: var(--muted);
+  color: #8b96cb;
   letter-spacing: 0.08em;
   text-align: center;
 }

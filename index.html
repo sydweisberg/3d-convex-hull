@@ -7,19 +7,24 @@
 </head>
 <body>
 
+<h1 id="title">˖⟡ 3D Convex Hull Collider ⟡˖</h1>
+
 <div id="ui">
   <div class="row" id="edit-row">
-    <div class="coord-group"><label>x</label><input id="x" type="number" value="0"></div>
-    <div class="coord-group"><label>y</label><input id="y" type="number" value="0"></div>
-    <div class="coord-group"><label>z</label><input id="z" type="number" value="0"></div>
-    <button id="addBtn">+ Add Point</button>
+    <div id="edit-controls" style="display:flex; align-items:center; gap:14px;">
+      <div class="coord-group"><label>x</label><input id="x" type="number" value="0"></div>
+      <div class="coord-group"><label>y</label><input id="y" type="number" value="0"></div>
+      <div class="coord-group"><label>z</label><input id="z" type="number" value="0"></div>
+      <button id="addBtn">+ Add Point</button>
+    </div>
+    <button id="toggleEdit" class="edit-on">Collision Mode</button>
+    <button id="resetView">Reset View</button>
+    <button id="testBtn">Sample Tetrahedrons</button>
+    <div style="flex:1"></div>
     <button id="toggleSide" class="active-l">Active: LEFT</button>
   </div>
 
   <div class="row">
-    <button id="toggleEdit" class="edit-on">Edit Mode: ON</button>
-    <button id="resetView">Reset View</button>
-    <div style="flex:1"></div>
     <div id="collision-status" class="idle">—</div>
   </div>
 

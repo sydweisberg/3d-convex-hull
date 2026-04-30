@@ -24,7 +24,7 @@ window.addEventListener("resize", () => {
 // ======================
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111827);
+scene.background = new THREE.Color(0xf0f9f8);
 
 const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 0, 14);
@@ -42,7 +42,7 @@ scene.add(dirLight);
 // GRID
 // ======================
 
-const grid = new THREE.GridHelper(30, 30, 0x1e3a5f, 0x162030);
+const grid = new THREE.GridHelper(30, 30, 0xadc4c2, 0xadc4c2);
 grid.position.y = -5;
 scene.add(grid);
 
@@ -54,6 +54,8 @@ const groupL = new THREE.Group();
 const groupR = new THREE.Group();
 scene.add(groupL);
 scene.add(groupR);
+
+groupR.visible = false;
 
 // ======================
 // STATE
@@ -77,9 +79,9 @@ let gjkDebounce = null;
 // COLORS
 // ======================
 
-const COLOR_L   = new THREE.Color(0x4fc3f7);
-const COLOR_R   = new THREE.Color(0xf48fb1);
-const COLOR_COL = new THREE.Color(0xff6e6e);
+const COLOR_L   = new THREE.Color(0x82bfb7);
+const COLOR_R   = new THREE.Color(0xf2a2bd);
+const COLOR_COL = new THREE.Color(0x8b96cb);
 
 // ======================
 // UI
@@ -87,29 +89,43 @@ const COLOR_COL = new THREE.Color(0xff6e6e);
 
 const btnToggleSide = document.getElementById("toggleSide");
 const btnToggleEdit = document.getElementById("toggleEdit");
+const btnTestShapes = document.getElementById("testBtn");
 const btnAdd        = document.getElementById("addBtn");
 const btnReset      = document.getElementById("resetView");
 const slider        = document.getElementById("overlapSlider");
 const editRow       = document.getElementById("edit-row");
+const editControls = document.getElementById("edit-controls");
 const sliderRow     = document.getElementById("slider-row");
 const statusBadge   = document.getElementById("collision-status");
 const dragHint      = document.getElementById("drag-hint");
+
+statusBadge.style.display = "none";
 
 btnToggleSide.addEventListener("click", () => {
   activeSide = activeSide === "L" ? "R" : "L";
   btnToggleSide.innerText = `Active: ${activeSide === "L" ? "LEFT" : "RIGHT"}`;
   btnToggleSide.className = activeSide === "L" ? "active-l" : "active-r";
+  if (editMode) {
+    groupL.visible = activeSide === "L";
+    groupR.visible = activeSide === "R";
+  }
 });
 
 btnToggleEdit.addEventListener("click", () => {
   editMode = !editMode;
-  btnToggleEdit.innerText = `Edit Mode: ${editMode ? "ON" : "OFF"}`;
+  btnToggleEdit.innerText = editMode ? "Collision Mode" : "Edit Mode";
   btnToggleEdit.className = editMode ? "edit-on" : "edit-off";
-  editRow.style.display   = editMode ? "flex"   : "none";
-  sliderRow.style.display = editMode ? "none"   : "flex";
-  dragHint.style.display  = editMode ? "none"   : "block";
+  btnTestShapes.style.display = editMode ? "inline-block" : "none";
+  btnToggleSide.style.display = editMode ? "inline-block" : "none";
+  editControls.style.display  = editMode ? "flex"  : "none";
+  sliderRow.style.display     = editMode ? "none"  : "flex";
+  dragHint.style.display      = editMode ? "none"  : "block";
+  statusBadge.style.display = editMode ? "none" : "block";
 
   if (!editMode) {
+    // Show both shapes when entering move mode
+    groupL.visible = true;
+    groupR.visible = true;
     offsetL = -5;
     offsetR =  5;
     updateGroupPositions();
@@ -119,7 +135,19 @@ btnToggleEdit.addEventListener("click", () => {
     offsetL = 0;
     offsetR = 0;
     updateGroupPositions();
+    // Restore visibility to active side only
+    groupL.visible = activeSide === "L";
+    groupR.visible = activeSide === "R";
+    tintHulls(false);
   }
+});
+
+// Replace the testBtn listener
+document.getElementById('testBtn').addEventListener('click', () => {
+  addPoint( 0,  1,  0);
+  addPoint(-1, -1,  1);
+  addPoint( 1, -1,  1);
+  addPoint( 0, -1, -1);
 });
 
 btnAdd.addEventListener("click", () => {
@@ -232,15 +260,15 @@ function drawHull(side, data) {
   geo.setAttribute("color",    new THREE.Float32BufferAttribute(colors,    3));
 
   const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    side:         THREE.DoubleSide,
-    transparent:  true,
-    opacity:      0.72,
+      vertexColors: true,
+      side:         THREE.DoubleSide,
+      transparent:  true,
+      opacity:      0.92,   // was 0.72
   }));
 
   mesh.add(new THREE.LineSegments(
-    new THREE.WireframeGeometry(geo),
-    new THREE.LineBasicMaterial({ color: baseColor, transparent: true, opacity: 0.4 })
+      new THREE.WireframeGeometry(geo),
+      new THREE.LineBasicMaterial({ color: baseColor, transparent: true, opacity: 0.9 })  // was 0.4
   ));
 
   group.add(mesh);
@@ -269,6 +297,7 @@ function scheduleGjk() {
 }
 
 async function runGjk() {
+  if (editMode) return;
   if (pointsL.length < 4 || pointsR.length < 4) return;
 
   try {
