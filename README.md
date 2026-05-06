@@ -54,7 +54,7 @@ Input: Points from the left and right convex hulls, position offsets of each con
 
 Output: Boolean, true if collision, false if not, and distance between objects
 ### Work Breakdown
-We both contributed equally to this project. Molly focused on implementing the naive convex hull algorithm, naive intersection, and GJK. Sydney focused on implementing incremental convex hull. We both worked on implementations of quickhull, and took turns contributing to the visualization. Finally, we checked each others work, and communicated througout the project about design and implementation decisions regardless of the specific algorithm we were working on. The work and time spent on the project was split 50/50.
+We both contributed equally to this project. Molly focused on implementing the naive convex hull algorithm, naive intersection, and GJK. Sydney focused on implementing incremental convex hull. We both worked on implementations of quickhull, and took turns contributing to the visualization. Finally, we checked each others work, and communicated throughout the project about design and implementation decisions regardless of the specific algorithm we were working on. The work and time spent on the project was split 50/50.
 ### Sources
 - CSC 372 Homework 5 (foundation of convex hull understanding)
 - CSC 372 Homework 6 (orientation test primatives)
