@@ -10,6 +10,8 @@ The goal of this project is to develop a visualization program for 3D convex hul
 - `pip install scipy`
 - `pip install flask`
 - `pip install flask_cors`
+or
+- `pip install -r requirements.txt`
 2. Open two terminals
 3. In one terminal run `python app.py`
 4. In the second terminal run `python -m http.server 8000`
