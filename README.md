@@ -11,7 +11,7 @@ The goal of this project is to develop a visualization program for 3D convex hul
 - `pip install flask`
 - `pip install flask_cors`
 
-or
+  or
 - `pip install -r requirements.txt`
 2. Open two terminals
 3. In one terminal run `python app.py`
@@ -29,3 +29,20 @@ or
 - You can drag the objects around by left clicking, holding, and moving them around
 - The slider at the bottom of the screen moves the two objects closer together across the X coordinate
 - The convex hull is automatically calculated, and if two objects collide, collision detection will trigger
+
+## Algorithm Overview
+# Naive Convex Hull
+Input: List of points
+Output Faces of the convex hull
+# Incremental Convex Hull
+Input: List of points
+Output: Faces of the convex hull
+# Quickhull
+Input: List of points
+Output: Convex hull object (simplicies, vertices)
+# Naive Intersection
+Input: Two points of two convex hulls
+Output: Boolean, true if intersection, false if not
+# GJK
+Input: Points from the left and right convex hulls, position offsets of each convex hull
+Output: Boolean, true if collision, false if not, and distance between objects
