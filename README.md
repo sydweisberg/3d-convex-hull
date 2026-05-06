@@ -34,10 +34,14 @@ The goal of this project is to develop a visualization program for 3D convex hul
 A convex hull is a set of points that forms a convex polygon of a list of all points. In 3D, the convex hull forms a convex polyhedron. Convex hulls are useful in many different fields, and have applications in robotics, image processing, data clustering, and mapping. Collision detection is another use case of convex hulls as it allows for more efficient tests due to the simplification of more complicated objects in 3D. Our contribution to this problem is an implementation of three different convex hull algorithms, two collision detection algorithms, and an AI-assisted visualization in 3D.
 ### Algorithms
 #### Naive Convex Hull
+The naive convex hull works by finding each triplet of points and seeing if every remaining point is on one side of the triplet. If all other points are on one side of the plane formed by the triplet of points, that face is part of the convex hull. Repeat until all faces have been checked.
+
 Input: List of points
 
 Output Faces of the convex hull
 #### Incremental Convex Hull
+The randomized incremental convex hull works by first forming a base case tetrahedron out of four points. The algorithm then increntally checks one point at time. It starts by computing the visible faces from the point. A face is visible if it passes a particular orietation test. Then, we check to see if the edges associated with each face are visible. Since an edge is associated with two faces, we know that edges where both faces are visible will not be part of the new convex hull. Edges where one face is visible from the point and the other is not will be part of the convex hull. For each of these edges where just on face is visible, we form a triangle between the point and the two vertices of the edge. This new face is then added to the convex hull, and the faces associated with edges where two faces are visible are removed from the convex hull. Repeat this step until we have visited every point in the list. 
+
 Input: List of points
 
 Output: Faces of the convex hull
