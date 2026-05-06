@@ -45,6 +45,7 @@ Output: Faces of the convex hull
 Input: List of points
 
 Output: Convex hull object (simplicies, vertices)
+
 We chose to use the quickhull algorithm to build our convex hull visualization since it is the most efficient of these algorithms. Additionally, Scipy has a great and easy to use implementation of it.
 #### Naive Intersection
 Input: Two points of two convex hulls
@@ -54,6 +55,7 @@ Output: Boolean, true if intersection, false if not
 Input: Points from the left and right convex hulls, position offsets of each convex hull
 
 Output: Boolean, true if collision, false if not, and distance between objects
+
 We chose to use GJK to detect collisions since it works better than our naive intersection algorithm, it is super efficient, and widely used in robotics and game development. Since the naive algorithm just handles point-inside-point detection, GJK is able to handle more cases for collision.
 ### Work Breakdown
 We both contributed equally to this project. Molly focused on implementing the naive convex hull algorithm, naive intersection, and GJK. Sydney focused on implementing incremental convex hull. We both worked on implementations of quickhull, and took turns contributing to the visualization. Finally, we checked each others work, and communicated throughout the project about design and implementation decisions regardless of the specific algorithm we were working on. The work and time spent on the project was split 50/50.
