@@ -33,16 +33,21 @@ The goal of this project is to develop a visualization program for 3D convex hul
 ## Algorithm Overview
 # Naive Convex Hull
 Input: List of points
+
 Output Faces of the convex hull
 # Incremental Convex Hull
 Input: List of points
+
 Output: Faces of the convex hull
 # Quickhull
 Input: List of points
+
 Output: Convex hull object (simplicies, vertices)
 # Naive Intersection
 Input: Two points of two convex hulls
+
 Output: Boolean, true if intersection, false if not
 # GJK
 Input: Points from the left and right convex hulls, position offsets of each convex hull
+
 Output: Boolean, true if collision, false if not, and distance between objects
