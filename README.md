@@ -31,23 +31,23 @@ The goal of this project is to develop a visualization program for 3D convex hul
 - The convex hull is automatically calculated, and if two objects collide, collision detection will trigger
 
 ## Algorithm Overview
-# Naive Convex Hull
+### Naive Convex Hull
 Input: List of points
 
 Output Faces of the convex hull
-# Incremental Convex Hull
+### Incremental Convex Hull
 Input: List of points
 
 Output: Faces of the convex hull
-# Quickhull
+### Quickhull
 Input: List of points
 
 Output: Convex hull object (simplicies, vertices)
-# Naive Intersection
+### Naive Intersection
 Input: Two points of two convex hulls
 
 Output: Boolean, true if intersection, false if not
-# GJK
+### GJK
 Input: Points from the left and right convex hulls, position offsets of each convex hull
 
 Output: Boolean, true if collision, false if not, and distance between objects
