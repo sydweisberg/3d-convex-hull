@@ -30,20 +30,22 @@ The goal of this project is to develop a visualization program for 3D convex hul
 - The slider at the bottom of the screen moves the two objects closer together across the X coordinate
 - The convex hull is automatically calculated, and if two objects collide, collision detection will trigger
 
-## Algorithm Overview
-### Naive Convex Hull
+## Project and Algorithm Overview
+A convex hull is a set of points that forms a convex polygon of a list of all points. In 3D, the convex hull forms a convex polyhedron. Convex hulls are useful in many different fields, and have applications in robotics, image processing, data clustering, and mapping. Collision detection is another use case of convex hulls as it allows for more efficient tests due to the simplification of more complicated objects in 3D. Our contribution to this problem is an implementation of three different convex hull algorithms, two collision detection algorithms, and an AI-assisted visualization in 3D.
+### Algorithms
+#### Naive Convex Hull
 Input: List of points
 
 Output Faces of the convex hull
-### Incremental Convex Hull
+#### Incremental Convex Hull
 Input: List of points
 
 Output: Faces of the convex hull
-### Quickhull
+#### Quickhull
 Input: List of points
 
 Output: Convex hull object (simplicies, vertices)
-### Naive Intersection
+#### Naive Intersection
 Input: Two points of two convex hulls
 
 Output: Boolean, true if intersection, false if not
@@ -51,3 +53,11 @@ Output: Boolean, true if intersection, false if not
 Input: Points from the left and right convex hulls, position offsets of each convex hull
 
 Output: Boolean, true if collision, false if not, and distance between objects
+### Work Breakdown
+We both contributed equally to this project. Molly focused on implementing the naive convex hull algorithm, naive intersection, and GJK. Sydney focused on implementing incremental convex hull. We both worked on implementations of quickhull, and took turns contributing to the visualization. Finally, we checked each others work, and communicated througout the project about design and implementation decisions regardless of the specific algorithm we were working on. The work and time spent on the project was split 50/50.
+### Sources
+- CSC 372 Homework 5 (foundation of convex hull understanding)
+- CSC 372 Homework 6 (orientation test primatives)
+- https://github.com/rgmyr/pyConvexHull3D/blob/master/hull3D.py (incremental convex hull)
+- https://github.com/yuehaowang/convex_hull_3d/blob/master/convex_hull.py (incremental convex hull)
+- https://claude.ai/ (visualization, incremental convex hull)
