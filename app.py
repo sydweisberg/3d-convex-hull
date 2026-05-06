@@ -14,7 +14,7 @@ def compute_hull(points):
     pts = np.array(points, dtype=float)
     pts = np.unique(pts, axis=0)
 
-    # if we don't have 4 points, it's not a hull yet
+    # we need at least 4 points for a 3d CH
     if len(pts) < 4:
         return None
 
